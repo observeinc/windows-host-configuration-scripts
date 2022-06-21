@@ -49,4 +49,4 @@ Assumes existence of environment variables
 
 1. Run following script
 ```
-Invoke-WebRequest -UseBasicParsing "https://drive.google.com/uc?export=download&id=1zofQY3Ddbk8EP5iBQtoB2-b0h2W6oc1d" -outfile .\observe-agents.zip; Expand-Archive .\observe-agents.zip -DestinationPath .\observe-agents -Force | .\observe-agents\windows-host-configuration-scripts-yasar-windows-host-config-scripts\agents.ps1 -ingest_token <<ingest_token>> -customer_id <<customer_id>> -observe_host_name <<observe_host_name>>
+[Net.ServicePointManager]::SecurityProtocol = "Tls, Tls11, Tls12, Ssl3"; Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/main/agents.ps1" -outfile .\agents.ps1; .\agents.ps1 -ingest_token <<ingest_token>> -customer_id <<customer_id>>

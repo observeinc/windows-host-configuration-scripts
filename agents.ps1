@@ -22,6 +22,7 @@ $osquery_installer_path = "$temp_dir$osquery_installer"
 $osquery_destination     = "$Env:Programfiles\osquery"
 $osquery_config_template = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/main/osquery.conf"
 $osquery_msiexec_args = "/I ${osquery_installer_path} TARGETDIR=`"${Env:Programfiles}\osquery`" /qn"
+$osquery_flags_url = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/main/osquery.flags"
 
 
 # telegraf
@@ -121,6 +122,7 @@ if (-not (Test-Path -LiteralPath $fluentbit_destination)) {
 ######## copy configs
 Write-Host "pulling osquery config template..."
 $osquery_conf = (Invoke-WebRequest -UseBasicParsing $osquery_config_template).Content
+$osquery_flags = (Invoke-WebRequest -UseBasicParsing $osquery_flags_url).Content
 Write-Host "pulling telegraf config template..."
 $telegraf_conf = (Invoke-WebRequest -UseBasicParsing $telegraf_config_template).Content
 Write-Host "pulling fluent-bit config template..."
@@ -141,6 +143,7 @@ if($datacenter -ne "aws"){
 
 Write-Host "writing osquery config..."
 Set-Content -Path $osquery_destination\osquery.conf -Value $osquery_conf -Force -ErrorAction Stop
+Set-Content -Path $osquery_destination\osquery.flags -Value $osquery_flags -Force -ErrorAction Stop
 
 Write-Host "writing telegraf config..."
 $telegraf_conf = $telegraf_conf -replace "<<customer_id>>", $customer_id -replace "<<ingest_token>>", $ingest_token -replace "<<observe_host_name>>" , $observe_host_name

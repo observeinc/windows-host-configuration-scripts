@@ -6,7 +6,8 @@ param (
     $config_files_clean=$false,
     $ec2metadata=$false,
     $datacenter="aws",
-    $appgroup=$null
+    $appgroup=$null,
+    $local=$false
     )
 
 [Net.ServicePointManager]::SecurityProtocol = "Tls, Tls11, Tls12, Ssl3"
@@ -121,12 +122,20 @@ if (-not (Test-Path -LiteralPath $fluentbit_destination)) {
 }
 ######## copy configs
 Write-Host "pulling osquery config template..."
-$osquery_conf = (Invoke-WebRequest -UseBasicParsing $osquery_config_template).Content
-$osquery_flags = (Invoke-WebRequest -UseBasicParsing $osquery_flags_url).Content
-Write-Host "pulling telegraf config template..."
-$telegraf_conf = (Invoke-WebRequest -UseBasicParsing $telegraf_config_template).Content
-Write-Host "pulling fluent-bit config template..."
-$fluentbit_conf = (Invoke-WebRequest -UseBasicParsing $fluentbit_config_template).Content
+if($local){
+    Write-Host "copying local configs"
+    $osquery_conf = Get-Content "./osquery.conf"
+    $telegraf_conf = Get-Content "./telegraf.conf"
+    $fluentbit_conf = Get-Content "./fluent-bit.conf"
+    $osquery_flags = Get-Content "./osquery.flags"
+}else{
+    $osquery_conf = (Invoke-WebRequest -UseBasicParsing $osquery_config_template).Content
+    $osquery_flags = (Invoke-WebRequest -UseBasicParsing $osquery_flags_url).Content
+    Write-Host "pulling telegraf config template..."
+    $telegraf_conf = (Invoke-WebRequest -UseBasicParsing $telegraf_config_template).Content
+    Write-Host "pulling fluent-bit config template..."
+    $fluentbit_conf = (Invoke-WebRequest -UseBasicParsing $fluentbit_config_template).Content
+}
 
 if($ec2metadata){
     $fluentbit_conf = $fluentbit_conf -replace "#####", ""
@@ -142,6 +151,8 @@ if($datacenter -ne "aws"){
 }
 
 Write-Host "writing osquery config..."
+Stop-Service osqueryd -ErrorAction Stop
+Start-Sleep -Seconds 5
 Set-Content -Path $osquery_destination\osquery.conf -Value $osquery_conf -Force -ErrorAction Stop
 Set-Content -Path $osquery_destination\osquery.flags -Value $osquery_flags -Force -ErrorAction Stop
 

@@ -9,8 +9,10 @@ param (
     $appgroup=$null
     )
 
-[Net.ServicePointManager]::SecurityProtocol = "Tls, Tls11, Tls12, Ssl3"
 ######## vars
+# Set up TLS for older versions of powershell
+[Net.ServicePointManager]::SecurityProtocol = "Tls, Tls11, Tls12, Ssl3"
+
 $github = "https://github.com"
 $temp_dir  = "C:\temp\observe\" #download installers here
 $msiexec = "msiexec.exe"
@@ -74,6 +76,9 @@ $fluentbit_major_version     = $fluentbit_latest_version.split(".")
 $fluentbit_major_version     = [String]::Join('.',$fluentbit_major_version, 0,2)
 $fluentbit_installer_url     = "https://fluentbit.io/releases/${fluentbit_major_version}/fluent-bit-${fluentbit_latest_version}-win64.exe"
 $fluentbit_installer_options = "/S /D=$fluentbit_destination"
+
+# Sanitize hostname hostname
+$observe_host_name = $observe_host_name -Replace "https://", "" -Replace ".com/", ".com"
 
 ######## download agents
 if (-not (Test-Path -LiteralPath $osquery_installer_path)) {

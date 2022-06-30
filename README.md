@@ -1,12 +1,10 @@
 # Configuraton script for Windows
 
 ## What does it do
-Inputs: 
-Assumes existence of environment variables
---customer_id $OBSERVE_CUSTOMER_ID 
---ingest_token $OBSERVE_DATASTREAM_TOKEN 
 
-- Creates a config_files directory in home of logged in user
+- Downloads the script to the directory the command is being run from
+
+- Determines the latest version of osquery, fluentbit and telegraf
 
 - Downloads configuration files from this git repository
 
@@ -43,10 +41,14 @@ Assumes existence of environment variables
         ```
     * --datacenter = value to use for datacenter in td-agent-bit.conf and telegraf.conf files - OPTIONAL - defaults to AWS
     * --appgroup = value to use for appgroup record in td-agent-bit.conf file  - OPTIONAL - defaults to null
+    * --local = TRUE/FLASE on whether or not use to local config files instead of the default config files - OPTIONAL - default to FALSE
 
 
 
 
 1. Run following script
 ```
-[Net.ServicePointManager]::SecurityProtocol = "Tls, Tls11, Tls12, Ssl3"; Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/main/agents.ps1" -outfile .\agents.ps1; .\agents.ps1 -ingest_token  <<ingest_token>> -customer_id <<customer_id>>
+[Net.ServicePointManager]::SecurityProtocol = "Tls, Tls11, Tls12, Ssl3"; Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/main/agents.ps1" -outfile .\agents.ps1; .\agents.ps1  -ingest_token <<ingest_token>> -customer_id <<customer_id>> -observe_host_name <<observe_host_name>>
+
+## Using Local Configs
+If you would like to use a custom config instead of the default configs, you can use the `--local` flag and set it to `TRUE`.  If you do this, the script will look in the directory it is being run from for the files `o

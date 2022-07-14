@@ -1,5 +1,5 @@
-######## params
-param (
+ ######## params
+ param (
     [Parameter(Mandatory)]$customer_id, 
     [Parameter(Mandatory)]$ingest_token,
     $observe_host_name='collect.observeinc.com',
@@ -156,17 +156,36 @@ if($datacenter -ne "aws"){
 }
 
 Write-Host "writing osquery config..."
+if (Test-Path -LiteralPath $osquery_destination\osquery.conf) { 
+    Write-Host "found osquery.conf, moving to osquery.conf.moved"
+    Rename-Item $osquery_destination\osquery.conf $osquery_destination\osquery.conf.moved -Force
+}
+
 Stop-Service osqueryd -ErrorAction Stop
 Start-Sleep -Seconds 5
+
 Set-Content -Path $osquery_destination\osquery.conf -Value $osquery_conf -Force -ErrorAction Stop
+
+if (Test-Path -LiteralPath $osquery_destination\osquery.flags) { 
+    Write-Host "found osquery.flags, moving to osquery.flags.moved"
+    Rename-Item $osquery_destination\osquery.flags $osquery_destination\osquery.flags.moved -Force
+}
 Set-Content -Path $osquery_destination\osquery.flags -Value $osquery_flags -Force -ErrorAction Stop
 
 Write-Host "writing telegraf config..."
 $telegraf_conf = $telegraf_conf -replace "<<customer_id>>", $customer_id -replace "<<ingest_token>>", $ingest_token -replace "<<observe_host_name>>" , $observe_host_name
+if (Test-Path -LiteralPath $telegraf_destination\$telegraf_version\telegraf.conf) { 
+    Write-Host "found telegraf.conf, moving to telegraf.conf.moved"
+    Rename-Item $telegraf_destination\$telegraf_version\telegraf.conf $telegraf_destination\$telegraf_version\telegraf.conf.moved -Force
+}
 Set-Content -Path $telegraf_destination\$telegraf_version\telegraf.conf -Value $telegraf_conf -ErrorAction Stop
 
 Write-Host "writing fluent-bit config..."
 $fluentbit_conf = $fluentbit_conf -replace "<<customer_id>>", $customer_id -replace "<<ingest_token>>", $ingest_token -replace "<<observe_host_name>>" , $observe_host_name
+if (Test-Path -LiteralPath $fluentbit_destination\conf\fluent-bit.conf) { 
+    Write-Host "found fluent-bit.conf, moving to fluent-bit.conf.moved"
+    Rename-Item $fluentbit_destination\conf\fluent-bit.conf $fluentbit_destination\conf\fluent-bit.conf.moved -Force
+}
 Set-Content -Path $fluentbit_destination\conf\fluent-bit.conf -Value $fluentbit_conf -ErrorAction Stop
 
 # ######## spin up services
@@ -209,4 +228,4 @@ if(-not (Get-Service fluent-bit -ErrorAction SilentlyContinue).Status -eq "Runni
 if($config_files_clean){
     Write-Host "Removing temp files..."
     Remove-Item $temp_dir -Recurse
-}
+} 

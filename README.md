@@ -12,14 +12,14 @@
 
 - Subsitutes values for data center, hostname, customer id, data ingest token and observe endpoint in configuration files
 
-- Copies files to respective agent locations, renames existing files with suffix OLD
+- Copies files to respective agent locations, renames existing files with suffix `moved`
 
 - Outputs status of services
 
 
 ## Steps to configure
 
-1. Login to machine via ssh
+1. Login to machine via RDP
 
 1. Script flags
     * --customer_id = your observe customer id - REQUIRED

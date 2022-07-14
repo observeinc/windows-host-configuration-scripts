@@ -6,7 +6,8 @@
     $config_files_clean=$false,
     $ec2metadata=$false,
     $datacenter="aws",
-    $appgroup=$null
+    $appgroup=$null,
+    $local=$false
     )
 
 ######## vars
@@ -126,12 +127,20 @@ if (-not (Test-Path -LiteralPath $fluentbit_destination)) {
 }
 ######## copy configs
 Write-Host "pulling osquery config template..."
-$osquery_conf = (Invoke-WebRequest -UseBasicParsing $osquery_config_template).Content
-$osquery_flags = (Invoke-WebRequest -UseBasicParsing $osquery_flags_url).Content
-Write-Host "pulling telegraf config template..."
-$telegraf_conf = (Invoke-WebRequest -UseBasicParsing $telegraf_config_template).Content
-Write-Host "pulling fluent-bit config template..."
-$fluentbit_conf = (Invoke-WebRequest -UseBasicParsing $fluentbit_config_template).Content
+if($local){
+    Write-Host "copying local configs"
+    $osquery_conf = Get-Content "./osquery.conf"
+    $telegraf_conf = Get-Content "./telegraf.conf"
+    $fluentbit_conf = Get-Content "./fluent-bit.conf"
+    $osquery_flags = Get-Content "./osquery.flags"
+}else{
+    $osquery_conf = (Invoke-WebRequest -UseBasicParsing $osquery_config_template).Content
+    $osquery_flags = (Invoke-WebRequest -UseBasicParsing $osquery_flags_url).Content
+    Write-Host "pulling telegraf config template..."
+    $telegraf_conf = (Invoke-WebRequest -UseBasicParsing $telegraf_config_template).Content
+    Write-Host "pulling fluent-bit config template..."
+    $fluentbit_conf = (Invoke-WebRequest -UseBasicParsing $fluentbit_config_template).Content
+}
 
 if($ec2metadata){
     $fluentbit_conf = $fluentbit_conf -replace "#####", ""
@@ -151,6 +160,10 @@ if (Test-Path -LiteralPath $osquery_destination\osquery.conf) {
     Write-Host "found osquery.conf, moving to osquery.conf.moved"
     Rename-Item $osquery_destination\osquery.conf $osquery_destination\osquery.conf.moved -Force
 }
+
+Stop-Service osqueryd -ErrorAction Stop
+Start-Sleep -Seconds 5
+
 Set-Content -Path $osquery_destination\osquery.conf -Value $osquery_conf -Force -ErrorAction Stop
 
 if (Test-Path -LiteralPath $osquery_destination\osquery.flags) { 

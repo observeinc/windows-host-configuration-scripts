@@ -13,4 +13,3 @@
 --logger_rotate_max_files=3
 --config_plugin=filesystem
 --logger_plugin=filesystem
---database_path="c:\\program files\\osquery\\osquery.db"

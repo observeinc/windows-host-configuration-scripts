@@ -42,7 +42,7 @@
     * -datacenter = value to use for datacenter in fluent-bit.conf and telegraf.conf files - OPTIONAL - defaults to AWS
     * -appgroup = value to use for appgroup record in fluent-bit.conf file  - OPTIONAL - defaults to null
     * -local = TRUE/FLASE on whether or not use to local config files instead of the default config files - OPTIONAL - default to FALSE
-    * -force
+    * -force = TRUE/FALSE on whether or not overwrite agent config files without confirmation (true will overwrite) - OPTION - default to FALSE
 
 
 

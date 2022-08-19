@@ -4,7 +4,7 @@ param (
     $observe_host_name='collect.observeinc.com',
     $config_files_clean=$false,
     $ec2metadata=$false,
-    $datacenter="AWS",
+    $datacenter="aws",
     $appgroup=$null,
     $local=$false,
     $force=$false

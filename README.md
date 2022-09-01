@@ -12,7 +12,7 @@
 
 - Subsitutes values for data center, hostname, customer id, data ingest token and observe endpoint in configuration files
 
-- Copies files to respective agent locations, renames existing files with suffix `moved`
+-  Gets confirmation for overwriting pre-existing configs
 
 - Outputs status of services
 
@@ -24,7 +24,7 @@
 1. Script flags
     * -customer_id = your observe customer id - REQUIRED
     * -ingest_token = your data stream ingest token from ui - REQUIRED
-    * -observe_host_name = host endpoint used in config files - OPTIONAL - defaults to collect.observeinc.com
+    * -observe_host_name = host endpoint used in config files - OPTIONAL - defaults to <<customer_id>>collect.observeinc.com
     * -config_files_clean = TRUE/FALSE whether to delete directory created for downloading config files - OPTIONAL - defaults to FALSE
     * -ec2metadata = TRUE/FALSE whether to add ec2 filter section to fluent-bit.conf file - OPTIONAL - defaults to FALSE
         ```

@@ -11,7 +11,7 @@ param (
     )
 
     if($observe_host_name -eq 'collect.observeinc.com'){
-        $observe_host_name="${customer_id}.${$observe_host_name}"
+        $observe_host_name="${customer_id}.${observe_host_name}"
     }
 
     $osquery_version = "5.4.0"

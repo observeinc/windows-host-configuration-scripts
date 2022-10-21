@@ -4,7 +4,7 @@ param (
     $observe_host_name='collect.observeinc.com',
     $config_files_clean=$false,
     $ec2metadata=$false,
-    $datacenter="aws",
+    $datacenter="AWS",
     $appgroup=$null,
     $local=$false,
     $force=$false
@@ -79,11 +79,14 @@ function Create-Services {
 
     if(-not ((Get-Service $agent.ServiceName -ErrorAction SilentlyContinue).Status -eq "Running")){
          Write-Host "service $($agent.ServiceName) not running, trying to restart.."
-         Stop-Service $agent.ServiceName -ErrorAction SilentlyContinue
-         Start-Sleep -Seconds 2
-         Start-service $agent.ServiceName -ErrorAction Stop
-         Get-Service $agent.ServiceName
+    }else{
+        Write-Host "service $($agent.ServiceName) is running, trying to restart.."
     }
+    Stop-Service $agent.ServiceName -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
+    Start-service $agent.ServiceName -ErrorAction Stop
+    Get-Service $agent.ServiceName
+    
 
 }
 
@@ -126,14 +129,14 @@ function Configure-AgentsTemplates {
         $configTemplate = $configTemplate -replace "<<customer_id>>", $customer_id -replace "<<ingest_token>>", $ingest_token -replace "<<observe_host_name>>" , $observe_host_name
         if($ec2metadata){
              $configTemplate = $configTemplate -replace "#####", ""
-             $configTemplate  = $configTemplate  -replace "  datacenter = `"aws`"", "  datacenter = `"$datacenter`""
+             $configTemplate  = $configTemplate  -replace "  datacenter = `"AWS`"", "  datacenter = `"$datacenter`""
         }
         if($null -ne $appgroup){
             $configTemplate = $configTemplate -replace "#    Record appgroup ha-proxy", "    Record appgroup $appgroup"
         }
-        if($datacenter -ne "aws"){
-            $configTemplate = $configTemplate -replace "    Record datacenter aws", "    Record datacenter $datacenter"
-            $configTemplate  = $configTemplate  -replace "  datacenter = `"aws`"", "  datacenter = `"$datacenter`""
+        if($datacenter -ne "AWS"){
+            $configTemplate = $configTemplate -replace "    Record datacenter AWS", "    Record datacenter $datacenter"
+            $configTemplate  = $configTemplate  -replace "  datacenter = `"AWS`"", "  datacenter = `"$datacenter`""
         }
 
         Set-Content -Path $agent.ConfigDest -Value $configTemplate -Force -ErrorAction Stop
@@ -207,11 +210,11 @@ Check-TempDir $temp_dir
 foreach ($agent in $agents.Keys) {
    foreach ($agentProps in $agents[$agent]){
         if(Check-AgentInstalled $agentProps){
-            Write-Host "$agent is already installed, skipping"
-            Continue
+            Write-Host "$agent is already installed, skipping installation"
+        }else{
+            Download-AgentInstallers $agentProps -Wait
+            Install-Agents $agentProps
         }
-        Download-AgentInstallers $agentProps -Wait
-        Install-Agents $agentProps
         Configure-AgentsTemplates $agentProps
         Create-Services $agentProps
    }

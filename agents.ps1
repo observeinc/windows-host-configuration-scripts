@@ -4,10 +4,12 @@ param (
     $observe_host_name='collect.observeinc.com',
     $config_files_clean=$false,
     $ec2metadata=$false,
+    $cloud_metadata=$false,
     $datacenter="AWS",
     $appgroup=$null,
     $local=$false,
-    $force=$false
+    $force=$false,
+    $branch="main"
     )
 
     if($observe_host_name -eq 'collect.observeinc.com'){
@@ -29,8 +31,8 @@ param (
             InstallerUrl = "https://pkg.osquery.io/windows/osquery-${osquery_version}.msi"
             DownloadDest = "$temp_dir\osquery-${osquery_version}.msi"
             InstallationExpression = "Start-Process `"msiexec.exe`" -ArgumentList `"$osquery_msiexec_args`" -Wait -ErrorAction Stop"
-            ConfigTemplate ="https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/main/osquery.conf"
-            FlagsTemplate = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/main/osquery.flags"
+            ConfigTemplate ="https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/$branch/osquery.conf"
+            FlagsTemplate = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/$branch/osquery.flags"
             ConfigDest = "${Env:Programfiles}\osquery\osquery.conf"
             FlagDest = "${Env:Programfiles}\osquery\osquery.flags"
             ServiceName = "osqueryd"
@@ -44,7 +46,7 @@ param (
             InstallerUrl = "https://dl.influxdata.com/telegraf/releases/telegraf-${telegraf_version}_windows_amd64.zip"
             DownloadDest =  "$temp_dir\telegraf-${telegraf_version}.zip"
             InstallationExpression = "Expand-Archive $temp_dir\telegraf-${telegraf_version}.zip -DestinationPath `"$Env:Programfiles\InfluxData\telegraf`" -Force -ErrorAction Stop"
-            ConfigTemplate = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/main/telegraf.conf"
+            ConfigTemplate = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/$branch/telegraf.conf"
             ConfigDest = "${Env:Programfiles}\InfluxData\telegraf\telegraf-${telegraf_version}\telegraf.conf"
             CreateServiceExpression = "Start-Process `"${Env:Programfiles}\InfluxData\telegraf\telegraf-${telegraf_version}\telegraf.exe`" -ArgumentList `"--service install --config ```"C:\Program Files\InfluxData\telegraf\telegraf-$telegraf_version\telegraf.conf```""" -Wait -ErrorAction Stop"
             ServiceName = "telegraf"
@@ -57,7 +59,7 @@ param (
             InstallerUrl ="https://fluentbit.io/releases/1.9/fluent-bit-${fluentbit_version}-win64.exe"
             DownloadDest = "$temp_dir\fluent-bit-${fluentbit_version}.exe"
             InstallationExpression = "Start-Process $temp_dir\fluent-bit-${fluentbit_version}.exe -ArgumentList `"/S /D=```"$Env:Programfiles\fluent-bit```"`" -Wait -ErrorAction Stop"
-            ConfigTemplate = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/main/fluent-bit.conf"
+            ConfigTemplate = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/$branch/fluent-bit.conf"
             ConfigDest = "${Env:Programfiles}\fluent-bit\conf\fluent-bit.conf"
             CreateServiceExpression = "New-Service fluent-bit -BinaryPathName `"```"${Env:Programfiles}\fluent-bit\bin\fluent-bit.exe```" -c ```"${Env:Programfiles}\fluent-bit\conf\fluent-bit.conf```"`" -StartupType Automatic -ErrorAction Stop"
             ServiceName = "fluent-bit"
@@ -131,6 +133,7 @@ function Configure-AgentsTemplates {
              $configTemplate = $configTemplate -replace "#####", ""
              $configTemplate  = $configTemplate  -replace "  datacenter = `"AWS`"", "  datacenter = `"$datacenter`""
         }
+
         if($null -ne $appgroup){
             $configTemplate = $configTemplate -replace "#    Record appgroup ha-proxy", "    Record appgroup $appgroup"
         }
@@ -224,3 +227,31 @@ if($config_files_clean){
     Write-Host "Removing temp files..."
     Remove-Item $temp_dir -Recurse
 } 
+
+
+if ($cloud_metadata) {
+    $metadata_command = "? ."
+    $metadata_commands = @(
+        # Azure
+        '$body = Invoke-RestMethod -Headers @{"Metadata"="true"} -Method GET -Uri "http://169.254.169.254/metadata/instance?api-version=2021-02-01" | ConvertTo-Json -Depth 64 -Compress',
+        # GCP
+        '$body = Invoke-RestMethod -Headers @{"Metadata-Flavor" = "Google"} -Uri "http://metadata.google.internal/computeMetadata/v1/?recursive=true" | ConvertTo-Json -Depth 64 -Compress',
+        # AWS
+        '$token = Invoke-RestMethod -Headers @{"X-aws-ec2-metadata-token-ttl-seconds" = "60"} -Method PUT -Uri http://169.254.169.254/latest/api/token; $body = Invoke-RestMethod -Headers @{"X-aws-ec2-metadata-token" = $token} -Method GET -Uri http://169.254.169.254/latest/dynamic/instance-identity/document | ConvertTo-Json -Depth 64 -Compress'
+    )
+    foreach ($command in $metadata_commands) {
+        try {
+            Invoke-Expression $command | Out-Null
+            $metadata_command = $command + "; Invoke-RestMethod -Headers @{'Authorization' = 'Bearer $ingest_token'} -ContentType application/json -Method POST -Body " + '$body' + " -Uri $observe_host_name/v1/http/cloud_metadata"
+            break
+        } catch {}
+    }
+    Write-Host "Using the following cloud metadata command: $metadata_command"
+    try {
+        Unregister-ScheduledJob observe-cloud-metadata
+    } catch {}
+    Register-ScheduledJob -Name observe-cloud-metadata -ScriptBlock {
+        param ($command)
+        Invoke-Expression $command
+    } -RunNow -RunEvery (New-TimeSpan -Minutes 5) -ArgumentList $metadata_command
+}

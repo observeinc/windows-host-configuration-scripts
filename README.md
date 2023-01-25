@@ -1,4 +1,4 @@
-# Configuraton script for Windows
+# Configuration script for Windows
 
 ## What does it do
 

@@ -16,7 +16,7 @@ param (
         $observe_host_name="${customer_id}.${observe_host_name}"
     }
 
-    $osquery_version = "5.4.0"
+    $osquery_version = "5.8.2"
     $telegraf_version = "1.23.3"
     $fluentbit_version = "2.0.9"
     

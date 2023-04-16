@@ -9,8 +9,7 @@ param (
     $appgroup=$null,
     $local=$false,
     $force=$false,
-    #this definitely needs to be undone or fixed.
-    $branch="jlb/fluent_2.0"
+    $branch="main"
     )
 
     if($observe_host_name -eq 'collect.observeinc.com'){
@@ -18,7 +17,7 @@ param (
     }
 
     $osquery_version = "5.8.2"
-    $telegraf_version = "1.23.3"
+    $telegraf_version = "1.26.0"
     $fluentbit_version = "2.0.9"
     
     $temp_dir  = "C:\temp\observe"

@@ -9,7 +9,8 @@ param (
     $appgroup=$null,
     $local=$false,
     $force=$false,
-    $branch="main"
+    #this definitely needs to be undone or fixed.
+    $branch="jlb/fluent_2.0"
     )
 
     if($observe_host_name -eq 'collect.observeinc.com'){

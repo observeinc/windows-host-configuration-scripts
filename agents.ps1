@@ -31,8 +31,8 @@ param (
             InstallerUrl = "https://pkg.osquery.io/windows/osquery-${osquery_version}.msi"
             DownloadDest = "$temp_dir\osquery-${osquery_version}.msi"
             InstallationExpression = "Start-Process `"msiexec.exe`" -ArgumentList `"$osquery_msiexec_args`" -Wait -ErrorAction Stop"
-            ConfigTemplate ="https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/$branch/osquery.conf"
-            FlagsTemplate = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/$branch/osquery.flags"
+            ConfigTemplate ="https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/$branch/config/osquery/osquery.conf"
+            FlagsTemplate = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/$branch/config/osquery/osquery.flags"
             ConfigDest = "${Env:Programfiles}\osquery\osquery.conf"
             FlagDest = "${Env:Programfiles}\osquery\osquery.flags"
             ServiceName = "osqueryd"
@@ -46,9 +46,9 @@ param (
             InstallerUrl = "https://dl.influxdata.com/telegraf/releases/telegraf-${telegraf_version}_windows_amd64.zip"
             DownloadDest =  "$temp_dir\telegraf-${telegraf_version}.zip"
             InstallationExpression = "Expand-Archive $temp_dir\telegraf-${telegraf_version}.zip -DestinationPath `"$Env:Programfiles\InfluxData\telegraf`" -Force -ErrorAction Stop"
-            ConfigTemplate = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/$branch/telegraf.conf"
-            ConfigDest = "${Env:Programfiles}\InfluxData\telegraf\telegraf-${telegraf_version}\telegraf.conf"
-            CreateServiceExpression = "Start-Process `"${Env:Programfiles}\InfluxData\telegraf\telegraf-${telegraf_version}\telegraf.exe`" -ArgumentList `"--service install --config ```"C:\Program Files\InfluxData\telegraf\telegraf-$telegraf_version\telegraf.conf```""" -Wait -ErrorAction Stop"
+            ConfigTemplate = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/$branch/config/telegraf/telegraf.conf"
+            ConfigDest = "${Env:Programfiles}\InfluxData\telegraf\telegraf-${telegraf_version}\conf\telegraf.conf"
+            CreateServiceExpression = "Start-Process `"${Env:Programfiles}\InfluxData\telegraf\telegraf-${telegraf_version}\telegraf.exe`" -ArgumentList `"--service install --config-directory ```"${Env:Programfiles}\InfluxData\telegraf\telegraf-$telegraf_version\conf\```""" -Wait -ErrorAction Stop"
             ServiceName = "telegraf"
             LocalFile = "./telegraf.conf"
         }
@@ -59,7 +59,7 @@ param (
             InstallerUrl ="https://fluentbit.io/releases/2.0/fluent-bit-${fluentbit_version}-win64.exe"
             DownloadDest = "$temp_dir\fluent-bit-${fluentbit_version}.exe"
             InstallationExpression = "Start-Process $temp_dir\fluent-bit-${fluentbit_version}.exe -ArgumentList `"/S /D=```"$Env:Programfiles\fluent-bit```"`" -Wait -ErrorAction Stop"
-            ConfigTemplate = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/$branch/fluent-bit.conf"
+            ConfigTemplate = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/$branch/config/fluent-bit/fluent-bit.conf"
             ConfigDest = "${Env:Programfiles}\fluent-bit\conf\fluent-bit.conf"
             CreateServiceExpression = "New-Service fluent-bit -BinaryPathName `"```"${Env:Programfiles}\fluent-bit\bin\fluent-bit.exe```" -c ```"${Env:Programfiles}\fluent-bit\conf\fluent-bit.conf```"`" -StartupType Automatic -ErrorAction Stop"
             ServiceName = "fluent-bit"
@@ -123,6 +123,7 @@ function Configure-AgentsTemplates {
     if(Test-Path -LiteralPath $agent.ConfigDest){
         $continue = Confirm-Overwrite -agent $agent.AgentName -file $agent.ConfigDest
     }else{
+        New-Item -Path $agent.ConfigDest -ItemType File -Force
         $continue = $true
     }
     if($continue){

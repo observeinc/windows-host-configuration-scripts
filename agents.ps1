@@ -47,7 +47,7 @@ param (
             DownloadDest =  "$temp_dir\telegraf-${telegraf_version}.zip"
             InstallationExpression = "Expand-Archive $temp_dir\telegraf-${telegraf_version}.zip -DestinationPath `"$Env:Programfiles\InfluxData\telegraf`" -Force -ErrorAction Stop"
             ConfigTemplate = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/$branch/telegraf.conf"
-            ConfigDest = "${Env:Programfiles}\InfluxData\telegraf\telegraf-${telegraf_version}\conf\"
+            ConfigDest = "${Env:Programfiles}\InfluxData\telegraf\telegraf-${telegraf_version}\conf\telegraf.conf"
             CreateServiceExpression = "Start-Process `"${Env:Programfiles}\InfluxData\telegraf\telegraf-${telegraf_version}\telegraf.exe`" -ArgumentList `"--service install --config-directory ```"${Env:Programfiles}\InfluxData\telegraf\telegraf-$telegraf_version\conf\```""" -Wait -ErrorAction Stop"
             ServiceName = "telegraf"
             LocalFile = "./telegraf.conf"

@@ -123,7 +123,7 @@ function Configure-AgentsTemplates {
     if(Test-Path -LiteralPath $agent.ConfigDest){
         $continue = Confirm-Overwrite -agent $agent.AgentName -file $agent.ConfigDest
     }else{
-        New-Item -Path $agent.ConfigDest -Value -Force
+        New-Item -Path $agent.ConfigDest -ItemType File -Force
         $continue = $true
     }
     if($continue){

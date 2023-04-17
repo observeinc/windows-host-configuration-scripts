@@ -142,7 +142,7 @@ function Configure-AgentsTemplates {
             $configTemplate  = $configTemplate  -replace "  datacenter = `"AWS`"", "  datacenter = `"$datacenter`""
         }
 
-        Set-Content -Path $agent.ConfigDest -Value $configTemplate -Force #-ErrorAction Stop
+        Set-Content -Path $agent.ConfigDest -Value $configTemplate -ErrorAction Stop -Force 
     }
     if(($agent.AgentName -eq "osquery") -and (Test-Path -LiteralPath $agent.FlagDest)){
         $continue = Confirm-Overwrite -agent $agent.AgentName -file $agent.FlagDest

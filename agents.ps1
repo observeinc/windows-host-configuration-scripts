@@ -18,7 +18,7 @@ param (
 
     $osquery_version = "5.8.2"
     $telegraf_version = "1.26.0"
-    $fluentbit_version = "2.0.9"
+    $fluentbit_version = "2.1.8"
     
     $temp_dir  = "C:\temp\observe"
     $osquery_msiexec_args = "/I ${temp_dir}\osquery-$osquery_version.msi TARGETDIR=```"${Env:Programfiles}\osquery```" /qn"
@@ -56,7 +56,7 @@ param (
             AgentName = "fluentbit"
             TestDestination = "${Env:Programfiles}\fluent-bit"
             Version = $fluentbit_version
-            InstallerUrl ="https://fluentbit.io/releases/2.0/fluent-bit-${fluentbit_version}-win64.exe"
+            InstallerUrl ="https://fluentbit.io/releases/2.1/fluent-bit-${fluentbit_version}-win64.exe"
             DownloadDest = "$temp_dir\fluent-bit-${fluentbit_version}.exe"
             InstallationExpression = "Start-Process $temp_dir\fluent-bit-${fluentbit_version}.exe -ArgumentList `"/S /D=```"$Env:Programfiles\fluent-bit```"`" -Wait -ErrorAction Stop"
             ConfigTemplate = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/$branch/fluent-bit.conf"

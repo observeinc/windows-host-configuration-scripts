@@ -205,9 +205,48 @@ function Check-AgentInstalled {
     )
 
     return (Test-Path $agent.TestDestination -ErrorAction SilentlyContinue)
+}
+
+function Test-Script {
+
+    param(
+        $observe_host_name
+    )
+
+    $url = "${observe_host_name}/v1/http/script_validation"
+
+    $headers = @{
+        "Authorization" = "Bearer $ingest_token"
+        "Content-type" = "application/json"
+    }
+
+    $body = @{
+        data = @{
+            datacenter = $datacenter
+            host = $env:COMPUTERNAME
+            message = "validating customer id and token"
+            os_family = "Microsoft Windows"
+            os = [System.Environment]::OSVersion.Version
+            result = "SUCCESS"
+            script_run = $datacenter
+
+        }
+    } | ConvertTo-Json
+
+
+    try{
+        Invoke-RestMethod -Uri $url -Headers $headers -Method Post -Body $body
+    }catch [System.Net.WebException]{
+        # print error and exit early
+        Write-Host $_ 
+        throw "failed to connect to observe. please check your installation parameters and try again."
+    } 
 
 }
 
+Write-Host "testing connection to Observe"
+Test-Script($observe_host_name)
+Write-Host "connection successful, installation agents"
 Check-TempDir $temp_dir
 
 foreach ($agent in $agents.Keys) {

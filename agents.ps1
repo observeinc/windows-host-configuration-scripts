@@ -12,9 +12,12 @@ param (
     $branch="main"
     )
 
+    # sanitize host name
     if($observe_host_name -eq 'collect.observeinc.com'){
         $observe_host_name="${customer_id}.${observe_host_name}"
     }
+
+    $observe_host_name = $observe_host_name -Replace "https://", "" -Replace ".com/", ".com" -Replace "http://", ""
 
     $osquery_version = "5.8.2"
     $telegraf_version = "1.26.0"
@@ -66,7 +69,6 @@ param (
             LocalFile = "./fluent-bit.conf"
         }
     }
-
 function Create-Services {
     
     param(
@@ -126,7 +128,6 @@ function Configure-AgentsTemplates {
         $continue = $true
     }
     if($continue){
-        $observe_host_name = $observe_host_name -Replace "https://", "" -Replace ".com/", ".com"
         $configTemplate = if($local ){ Get-Content $agent.LocalFile} else{(Invoke-WebRequest -UseBasicParsing $agent.configTemplate).Content}
         $configTemplate = $configTemplate -replace "<<customer_id>>", $customer_id -replace "<<ingest_token>>", $ingest_token -replace "<<observe_host_name>>" , $observe_host_name
         if($ec2metadata){
@@ -213,7 +214,7 @@ function Test-Script {
         $observe_host_name
     )
 
-    $url = "${observe_host_name}/v1/http/script_validation"
+    $url = "https://${observe_host_name}/v1/http/script_validation"
 
     $headers = @{
         "Authorization" = "Bearer $ingest_token"

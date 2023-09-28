@@ -43,9 +43,9 @@
     * -appgroup = value to use for appgroup record in fluent-bit.conf file  - OPTIONAL - defaults to null
     * -local = TRUE/FLASE on whether or not use to local config files instead of the default config files - OPTIONAL - default to FALSE
     * -force = TRUE/FALSE on whether or not overwrite agent config files without confirmation (true will overwrite) - OPTION - default to FALSE
-
-
-
+    * -osquery_version = value for which osquery version to install (defaults to "5.8.2")
+    * -telegraf_version = value for which telegraf version to install (defaults to "1.26.0")
+    * -fluentbit_version = value for which fluent-bit version to install (defaults to "2.1.10")
 
 1. Run following script
 ```

@@ -214,29 +214,15 @@ function Test-Script {
         $observe_host_name
     )
 
-    $url = "https://${observe_host_name}/v1/http/script_validation"
+    $url = "https://${observe_host_name}/"
 
     $headers = @{
         "Authorization" = "Bearer $ingest_token"
         "Content-type" = "application/json"
     }
 
-    $body = @{
-        data = @{
-            datacenter = $datacenter
-            host = $env:COMPUTERNAME
-            message = "validating customer id and token"
-            os_family = "Microsoft Windows"
-            os = [System.Environment]::OSVersion.Version
-            result = "SUCCESS"
-            script_run = $datacenter
-
-        }
-    } | ConvertTo-Json
-
-
     try{
-        Invoke-RestMethod -Uri $url -Headers $headers -Method Post -Body $body
+        Invoke-RestMethod -Uri $url -Headers $headers -Method HEAD
     }catch [System.Net.WebException]{
         # print error and exit early
         Write-Host $_ 

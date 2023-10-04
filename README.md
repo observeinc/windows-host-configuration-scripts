@@ -50,6 +50,29 @@
 1. Run following script
 ```
 [Net.ServicePointManager]::SecurityProtocol = "Tls, Tls11, Tls12, Ssl3"; Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/main/agents.ps1" -outfile .\agents.ps1; .\agents.ps1  -ingest_token <<ingest_token>> -customer_id <<customer_id>> -observe_host_name <<observe_host_name>>
-
+```
 ## Using Local Configs
 If you would like to use a custom config instead of the default configs, you can use the `-local` flag and set it to `TRUE`.  If you do this, the script will look in the directory it is being run from for the files `o
+
+
+## Uninstalling the Configuration
+
+To uninstall the configuration and remove the installed services, follow these steps:
+
+1. Run the uninstall script by using the following command:
+
+   ```powershell
+   [Net.ServicePointManager]::SecurityProtocol = "Tls, Tls11, Tls12, Ssl3"
+   Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/main/uninstall.ps1" -outfile .\uninstall.ps1
+   .\uninstall.ps1
+   ```
+This script will remove the osquery, fluent-bit, and telegraf services and their associated configuration files.  If you would like to remove the services without confirming, you can add the `-ForceRemove` flag and all services and agents will be removed.
+
+After running the uninstall script, you may need to manually remove any leftover directories. The following directories may need to be manually removed:
+
+C:\Program Files\osquery
+C:\Program Files\fluent-bit
+C:\Program Files\InfluxData\telegraf
+
+All config files get backed up to `C:\temp\observe\`.
+Please ensure you have administrative privileges when running both the configuration and uninstallation scripts.

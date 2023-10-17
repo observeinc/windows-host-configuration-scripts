@@ -46,6 +46,8 @@
     * -osquery_version = value for which osquery version to install (defaults to "5.8.2")
     * -telegraf_version = value for which telegraf version to install (defaults to "1.26.0")
     * -fluentbit_version = value for which fluent-bit version to install (defaults to "2.1.10")
+    * -service_restart_delay = delay in milliseconds for restarting failed service (defaults to 5000)
+    * -service_max_restarts = max number of attempts to restart failed services (defaults to 5)
 
 1. Run following script
 ```

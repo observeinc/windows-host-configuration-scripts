@@ -12,7 +12,9 @@ param (
     $branch="main",
     $osquery_version="5.8.2",
     $telegraf_version="1.26.0",
-    $fluentbit_version="2.1.10"
+    $fluentbit_version="2.1.10",
+    $service_restart_delay=5000,
+    $service_max_restarts=5
     )
 
     # sanitize host name
@@ -87,6 +89,7 @@ function Create-Services {
         Write-Host "service $($agent.ServiceName) is running, trying to restart.."
     }
     Stop-Service $agent.ServiceName -ErrorAction SilentlyContinue
+    Set-ServiceFailureAction $agent.ServiceName
     Start-Sleep -Seconds 2
     Start-service $agent.ServiceName -ErrorAction Stop
     Get-Service $agent.ServiceName
@@ -229,6 +232,15 @@ function Test-Script {
         throw "failed to connect to observe. please check your installation parameters and try again."
     } 
 
+}
+
+function Set-ServiceFailureAction {
+    param(
+        $service_name
+    )
+
+    # Restart on failure 3 times
+    & sc.exe failure "$service_name" reset= 0 actions= "restart/$service_restart_delay/$service_max_restarts"
 }
 
 Write-Host "testing connection to Observe"

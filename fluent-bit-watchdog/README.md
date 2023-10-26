@@ -7,8 +7,8 @@ To install the fluent-bit watchdog, run the command below. The script will do th
 
 
 1. To install, simply run:
-   ```powershell
+```powershell
 Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/main/fluent-bit-watchdog/intstall.ps1").Content
-   ```
+```
 
 NOTE: This assumes you have installed the Observe agents located in the root of this repository.

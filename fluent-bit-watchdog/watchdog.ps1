@@ -2,6 +2,16 @@
 # 1000: Failed to query prometheus endpoint
 # 1001: Fluentbit stopped sending records
 # 1002: Fluentbit service is not running
+# 1003: Found duplicate process
+
+
+# Check for any existing instances of the script
+$existingInstances =  Get-WmiObject Win32_Process -Filter "Name='powershell.exe' AND CommandLine LIKE '%watchdog.ps1%'" | Select-Object -ExpandProperty ProcessID
+# Terminate any existing instances of the script
+foreach ($instance in $existingInstances) {
+    Write-EventLog -LogName "Application" -Source "Application" -EventID 1003 -EntryType Info -Message "Found running instance ${instance}, killing it."
+    Stop-Process -Id $instance -Force
+ } 
 
 $promUri = "http://localhost:2021/api/v1/metrics/prometheus"
 $metricName = "fluentbit_output_proc_records_total"
@@ -20,7 +30,8 @@ $backoffLimit = [TimeSpan]::FromMinutes(5)
 # is unavailable.
 function Get-PrometheusMetrics {
     try{
-        $response = Invoke-WebRequest -Uri $promUri
+        # we need -UseBasicParsing to bypass internet explorer first launch requirement
+        $response = Invoke-WebRequest -Uri $promUri -UseBasicParsing
     }catch [System.Net.WebException] {
         Write-EventLog -LogName "Application" -Source "Application" -EventID 1000 -EntryType Warning -Message "Failed to query prometheus endpoint."
     }

@@ -1,13 +1,19 @@
-# Function to update configuration
-function UpdateConfiguration($configFile, $settings) {
-    # Read the existing configuration
-    $existingConfig = Get-Content $configFile -Raw
+ # Function to update configuration
+ function UpdateConfiguration($configFile, $settings) {
+  # Read the existing configuration
+  $existingConfig = Get-Content $configFile -Raw
 
+  # Check if settings already exist in the configuration
+  if ($existingConfig -notmatch [regex]::Escape($settings)) {
     # Append the settings to the configuration
     $newConfig = $existingConfig + "`n$settings"
 
     # Write the updated configuration back to the file
     Set-Content -Path $configFile -Value $newConfig
+  }
+  else {
+    Write-Host "Agent already has an updated config. No changes made."
+  }
 }
 
 $fluentConf = "C:\Program Files\fluent-bit\conf\fluent-bit.conf"
@@ -73,19 +79,22 @@ Invoke-WebRequest -Uri $downloadUrl -OutFile $watchdogFile
 
 # The task doesn't exist, so create it
 $action = New-ScheduledTaskAction -Execute 'PowerShell.exe' -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$watchdogFile`" -WindowStyle Hidden"
-$trigger = New-ScheduledTaskTrigger -AtStartup
+$creation_trigger = Get-CimClass "MSFT_TaskRegistrationTrigger" -Namespace "Root/Microsoft/Windows/TaskScheduler" 
+$startup_trigger = New-ScheduledTaskTrigger -AtStartup
+$daily_trigger = New-ScheduledTaskTrigger -Daily -DaysInterval 1 -At 3am
+$triggers = @($daily_trigger, $startup_trigger, $creation_trigger)
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 $settings.RestartInterval = "PT5M"  # Restart the task after 1 minute if it fails
 $settings.RestartCount = 9999  # Set a high number to make it run indefinitely
 $settings.ExecutionTimeLimit = "P999D"
+$settings.CimInstanceProperties.Item('MultipleInstances').Value = 3   # 3 corresponds to 'Stop the existing instance'
 # Set the task to run with the SYSTEM account
 $principal = New-ScheduledTaskPrincipal -UserId "NT AUTHORITY\SYSTEM" -LogonType ServiceAccount
 
 if (Get-ScheduledTask -TaskName $taskName -TaskPath $taskPath -ErrorAction SilentlyContinue ) {
-    Set-ScheduledTask -TaskName $taskName -TaskPath $taskPath -Action $action -Trigger $trigger -Settings $settings -Principal $principal
+    Set-ScheduledTask -TaskName $taskName -TaskPath $taskPath -Action $action -Trigger $triggers -Settings $settings -Principal $principal
+    # start task if the task already exists
+    Start-ScheduledTask -TaskPath $taskPath -TaskName $taskName  
 } else {
-    Register-ScheduledTask -TaskName $taskName -TaskPath $taskPath -Action $action -Trigger $trigger -Settings $settings -Principal $principal
+    Register-ScheduledTask -TaskName $taskName -TaskPath $taskPath -Action $action -Trigger $triggers -Settings $settings -Principal $principal
 }
-
-# Start the scheduled task immediately after creating or updating it
-Start-ScheduledTask -TaskPath $taskPath -TaskName $taskName 

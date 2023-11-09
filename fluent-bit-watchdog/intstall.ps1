@@ -93,6 +93,8 @@ $principal = New-ScheduledTaskPrincipal -UserId "NT AUTHORITY\SYSTEM" -LogonType
 
 if (Get-ScheduledTask -TaskName $taskName -TaskPath $taskPath -ErrorAction SilentlyContinue ) {
     Set-ScheduledTask -TaskName $taskName -TaskPath $taskPath -Action $action -Trigger $triggers -Settings $settings -Principal $principal
+    # start task if the task already exists
+    Start-ScheduledTask -TaskPath $taskPath -TaskName $taskName  
 } else {
     Register-ScheduledTask -TaskName $taskName -TaskPath $taskPath -Action $action -Trigger $triggers -Settings $settings -Principal $principal
 }

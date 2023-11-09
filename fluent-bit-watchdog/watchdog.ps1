@@ -9,8 +9,11 @@
 $existingInstances =  Get-WmiObject Win32_Process -Filter "Name='powershell.exe' AND CommandLine LIKE '%watchdog.ps1%'" | Select-Object -ExpandProperty ProcessID
 # Terminate any existing instances of the script
 foreach ($instance in $existingInstances) {
-    Write-EventLog -LogName "Application" -Source "Application" -EventID 1003 -EntryType Info -Message "Found running instance ${instance}, killing it."
-    Stop-Process -Id $instance -Force
+    # Ignore my current instance
+    if($instance -ne $PID){
+        Write-EventLog -LogName "Application" -Source "Application" -EventID 1003 -EntryType Info -Message "Found another running instance (PID:${instance}), killing it."
+        Stop-Process -Id $instance -Force
+    }
  } 
 
 $promUri = "http://localhost:2021/api/v1/metrics/prometheus"

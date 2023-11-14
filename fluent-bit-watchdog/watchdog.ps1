@@ -22,12 +22,6 @@ $staleThreshold = [TimeSpan]::FromMinutes(3)
 $checkInterval = [TimeSpan]::FromSeconds(30)
 $promScrapeInterval = [TimeSpan]::FromSeconds(30)
 
-# If fluent-bit isn't running we start, we wait with an
-# exponential backoff
-$backoffCounter = 1
-$backoffMultiplier = 0.5
-$backoffLimit = [TimeSpan]::FromMinutes(5)
-
 # Function to scape prometheus to gather fluentbit metrics.
 # If we fail, we log event 1000 to indicate that the endpoint
 # is unavailable.
@@ -36,7 +30,8 @@ function Get-PrometheusMetrics {
         # we need -UseBasicParsing to bypass internet explorer first launch requirement
         $response = Invoke-WebRequest -Uri $promUri -UseBasicParsing
     }catch [System.Net.WebException] {
-        Write-EventLog -LogName "Application" -Source "Application" -EventID 1000 -EntryType Warning -Message "Failed to query prometheus endpoint."
+        Write-EventLog -LogName "Application" -Source "Application" -EventID 1000 -EntryType Warning -Message "Failed to query prometheus endpoint, restarting fluent-bit"
+        Restart-Service fluent-bit
     }
     return $response.content
 }
@@ -69,15 +64,8 @@ $lastSum = $null
 $staleTime = $null
 
 Start-Sleep -Seconds ($promScrapeInterval+1).TotalSeconds
-$sleepTime = $checkInterval
 while ($true) {
-    # If the service was never running, 
-    # we shouldn't bother doing anything until it starts
-   $sleepTime = [TimeSpan]::FromSeconds([Math]::Ceiling($sleepTime.TotalSeconds * $backoffCounter))
     if (Check-FluentbitRunning){
-        # reset backoff counter if we previously failed
-        $backoffCounter =1 
-        $sleepTime = $checkInterval
         $metrics = Get-PrometheusMetrics
         $totalRecords = Calculate-MetricSum $metrics $metricName
 
@@ -105,12 +93,10 @@ while ($true) {
             $staleTime = $null
         }
     }else{
-        Write-EventLog -LogName "Application" -Source "Application" -EventID 1002 -EntryType Warning -Message "Fluentbit not runnning, waiting $($sleepTime.TotalSeconds) seconds and retrying."
-        if ($sleepTime -lt $backoffLimit.TotalSeconds){
-            $backoffCounter += $backoffMultiplier
-         }
+        Write-EventLog -LogName "Application" -Source "Application" -EventID 1002 -EntryType Warning -Message "Fluentbit not runnning, restarting fluentbit."
+        Restart-Service fluent-bit
     }
 
-    Start-Sleep -Seconds $sleepTime.TotalSeconds
+    Start-Sleep -Seconds $checkInterval.TotalSeconds
 }
  

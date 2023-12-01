@@ -1,9 +1,10 @@
-# EventIDs
+ # EventIDs
 # 1000: Failed to query prometheus endpoint
 # 1001: Fluentbit stopped sending records
 # 1002: Fluentbit service is not running
 # 1003: Found duplicate process
-
+# 2000: Fluentbit service hung
+# 2001: Killed fluentbit process to unhang service
 
 # Check for any existing instances of the script
 $existingInstances =  Get-WmiObject Win32_Process -Filter "Name='powershell.exe' AND CommandLine LIKE '%watchdog.ps1%'" | Select-Object -ExpandProperty ProcessID
@@ -60,6 +61,27 @@ function Check-FluentbitRunning {
     return (Get-Service -Name fluent-bit).Status -eq "Running"
 }
 
+function Restart-Fluentbit {
+    
+    # Run in a separate process so if we are hung, we aren't stuck
+    # Once fluent-bit process is killed, the hung powershell process
+    # will also terminate.
+    Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"Restart-Service fluent-bit`"" -NoNewWindow
+
+    # Give the service more than enough time to stop
+    Start-Sleep -Seconds 5
+
+    if (Check-FluentbitRunning){
+        return
+    }else{
+        Write-EventLog -LogName "Application" -Source "Application" -EventID 2000 -EntryType Info -Message "Fluent-bit service is hung, forcibly killing the process."
+        $service_pid=  sc.exe queryex fluent-bit | Select-String 'PID\s+:\s+(\d+)' | ForEach-Object { $_.Matches.Groups[1].Value } 
+        taskkill /pid $service_pid /F 
+        Write-EventLog -LogName "Application" -Source "Application" -EventID 2001 -EntryType Info -Message "Killed fluent-bit process with pid ${service_pid}"
+        Start-Service fluent-bit
+    }
+} 
+
 $lastSum = $null
 $staleTime = $null
 
@@ -81,7 +103,7 @@ while ($true) {
             elseif ((Get-Date) - $staleTime -ge $staleThreshold) {
                 # We've breached our tolerance for stagnation, restart fluent-bit and log it
                 Write-EventLog -LogName "Application" -Source "Application" -EventID 1001 -EntryType Warning -Message "Fluentbit has not processed any new records for ${staleThreshold.TotalSeconds} seconds, restarting."
-                Restart-Service fluent-bit
+                Restart-Fluentbit
                 # Give prom a chance to start scraping
                 Start-Sleep -Seconds ($promScrapeInterval+1).TotalSeconds
                 $staleTime = $null
@@ -94,9 +116,8 @@ while ($true) {
         }
     }else{
         Write-EventLog -LogName "Application" -Source "Application" -EventID 1002 -EntryType Warning -Message "Fluentbit not runnning, restarting fluentbit."
-        Restart-Service fluent-bit
+        Restart-Fluentbit
     }
 
     Start-Sleep -Seconds $checkInterval.TotalSeconds
 }
- 

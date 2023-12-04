@@ -1,4 +1,8 @@
- # Function to update configuration
+param (
+  $debug_logging=$false
+)
+
+# Function to update configuration
  function UpdateConfiguration($configFile, $settings) {
   # Read the existing configuration
   $existingConfig = Get-Content $configFile -Raw
@@ -68,7 +72,7 @@ $taskName = "Observe Fluent-bit Watchdog"
 $taskPath = "\"
 $watchdogDir = "c:\observe"
 $watchdogFile = "$watchdogDir\watchdog.ps1"
-$downloadUrl = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/main/fluent-bit-watchdog/watchdog.ps1"
+$downloadUrl = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/yasar/logging/fluent-bit-watchdog/watchdog.ps1"
 
 
 if (-not (Test-Path -Path $watchdogDir -PathType Container)) {
@@ -78,7 +82,7 @@ if (-not (Test-Path -Path $watchdogDir -PathType Container)) {
 Invoke-WebRequest -Uri $downloadUrl -OutFile $watchdogFile
 
 # The task doesn't exist, so create it
-$action = New-ScheduledTaskAction -Execute 'PowerShell.exe' -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$watchdogFile`" -WindowStyle Hidden"
+$action = New-ScheduledTaskAction -Execute 'PowerShell.exe' -Argument "-NoProfile -ExecutionPolicy Bypass -File ""$watchdogFile"" -WindowStyle Hidden -debug_logging -ArgumentList ""-debug_logging $($debug_logging)"""
 $creation_trigger = Get-CimClass "MSFT_TaskRegistrationTrigger" -Namespace "Root/Microsoft/Windows/TaskScheduler" 
 $startup_trigger = New-ScheduledTaskTrigger -AtStartup
 $daily_trigger = New-ScheduledTaskTrigger -Daily -DaysInterval 1 -At 3am

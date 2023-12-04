@@ -1,10 +1,19 @@
- # EventIDs
+# EventIDs
 # 1000: Failed to query prometheus endpoint
 # 1001: Fluentbit stopped sending records
 # 1002: Fluentbit service is not running
 # 1003: Found duplicate process
 # 2000: Fluentbit service hung
 # 2001: Killed fluentbit process to unhang service
+# 3000: script startup
+
+param (
+  $debug_logging=$false
+)
+
+if ($debug_logging){
+    Write-EventLog -LogName "Application" -Source "Application" -EventID 3000 -EntryType Debug -Message "Fluent-bit watchdog starting up"
+}
 
 # Check for any existing instances of the script
 $existingInstances =  Get-WmiObject Win32_Process -Filter "Name='powershell.exe' AND CommandLine LIKE '%watchdog.ps1%'" | Select-Object -ExpandProperty ProcessID
@@ -90,12 +99,18 @@ while ($true) {
     if (Check-FluentbitRunning){
         $metrics = Get-PrometheusMetrics
         $totalRecords = Calculate-MetricSum $metrics $metricName
+        if ($debug_logging){
+            Write-EventLog -LogName "Application" -Source "Application" -EventID 3001 -EntryType Debug -Message "Fluent-bit processesd ${totalRecords} records"
+        }
 
         # Check if we are starting to stagnate
         if ($lastSum -ne $null -and $lastSum -eq $totalRecords) {
             # If we have just started stagnating, get a timestamp
             if ($staleTime -eq $null) {
                 $staleTime = Get-Date
+                if($debug_logging){
+                    Write-EventLog -LogName "Application" -Source "Application" -EventID 3002 -EntryType Debug -Message "Metrics have begun stagnating"
+                }
             }
 
             # If we were stagnating the lat time we checked,

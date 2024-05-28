@@ -12,7 +12,7 @@ param (
     $branch="main",
     $osquery_version="5.8.2",
     $telegraf_version="1.26.0",
-    $fluentbit_version="2.1.10",
+    $fluentbit_version="3.0.4",
     $service_restart_delay=5000,
     $service_max_restarts=5
     )

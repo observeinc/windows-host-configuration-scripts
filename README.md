@@ -1,5 +1,11 @@
 # Configuraton script for Windows
 
+---
+
+***This content is being deprecated in favor of [Host Quick Start Integration](https://docs.observeinc.com/en/latest/content/integrations/host/quickstart.html) and will be removed in a future release.***
+
+---
+
 ## What does it do
 
 - Downloads the script to the directory the command is being run from

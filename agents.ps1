@@ -12,7 +12,7 @@ param (
     $branch="main",
     $osquery_version="5.8.2",
     $telegraf_version="1.26.0",
-    $fluentbit_version="3.0.4",
+    $fluentbit_version="4.2.0",
     $service_restart_delay=5000,
     $service_max_restarts=5
     )
@@ -61,7 +61,7 @@ param (
             AgentName = "fluentbit"
             TestDestination = "${Env:Programfiles}\fluent-bit"
             Version = $fluentbit_version
-            InstallerUrl ="https://fluentbit.io/releases/$($fluentbit_version.Split(".")[0..1] -join "." )/fluent-bit-${fluentbit_version}-win64.exe"
+            InstallerUrl ="https://packages.fluentbit.io/windows/fluent-bit-${fluentbit_version}-win64.exe"
             DownloadDest = "$temp_dir\fluent-bit-${fluentbit_version}.exe"
             InstallationExpression = "Start-Process $temp_dir\fluent-bit-${fluentbit_version}.exe -ArgumentList `"/S /D=```"$Env:Programfiles\fluent-bit```"`" -Wait -ErrorAction Stop"
             ConfigTemplate = "https://raw.githubusercontent.com/observeinc/windows-host-configuration-scripts/$branch/fluent-bit.conf"
